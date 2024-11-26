@@ -191,15 +191,12 @@ int main() {
     initscr();
     noecho();
     curs_set(0);
-    keypad(stdscr, TRUE); // Mengaktifkan tombol arah
+    keypad(stdscr, TRUE); 
 
-    // Memuat inventaris dari file jika ada
     vector<string> inventory = loadInventory("inventory.txt");
 
-    // Memulai menu utama
     mainMenu(inventory);
 
-    // Simpan inventaris sebelum keluar
     saveInventory(inventory, "inventory.txt");
 
     
