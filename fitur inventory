@@ -1,0 +1,209 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <ncurses/ncurses.h>
+#include <algorithm>
+
+using namespace std;
+
+void displayMainMenu(int highlight) {
+    clear();
+    mvprintw(1, 10, "=== Game Menu ===");
+    const char* options[] = {"Buka Inventory", "Keluar Game"};
+    
+    for (int i = 0; i < 2; ++i) {
+        if (i == highlight) {
+            attron(A_REVERSE); 
+        }
+        mvprintw(i + 2, 10, "%s", options[i]);
+        if (i == highlight) {
+            attroff(A_REVERSE);
+        }
+    }
+    refresh();
+}
+
+
+void displayInventoryMenu(const vector<string>& inventory, int highlight) {
+    clear();
+    attron(A_BOLD);
+    mvprintw(1, 10, "=== Inventory ===");
+    attroff(A_BOLD);
+
+    if (inventory.empty()) {
+        mvprintw(3, 10, "Inventory kosong.");
+    } else {
+        for (int i = 0; i < inventory.size(); ++i) {
+            if (i == highlight) {
+                attron(A_REVERSE); 
+            }
+            mvprintw(i + 3, 10, "%d. %s", i + 1, inventory[i].c_str());
+            if (i == highlight) {
+                attroff(A_REVERSE);
+            }
+        }
+    }
+    mvprintw(inventory.size() + 5, 10, "Gunakan arrow keys untuk memilih item.");
+    mvprintw(inventory.size() + 6, 10, "Tekan 'A' untuk menambahkan item.");
+    mvprintw(inventory.size() + 7, 10, "Tekan 'R' untuk menghapus item.");
+    mvprintw(inventory.size() + 8, 10, "Tekan ESC untuk kembali.");
+    refresh();
+}
+
+
+void addItem(vector<string>& inventory) {
+    mvprintw(15, 10, "Masukkan nama item: ");
+    refresh();
+    char buffer[256];
+    scanw("%s", buffer);
+    string item(buffer);
+    
+    if (inventory.size() < 10) { // Maksimal 10 item
+        inventory.push_back(item);
+        mvprintw(16, 10, "%s telah ditambahkan ke inventory.", item.c_str());
+        refresh();
+        napms(1000); 
+    } else {
+        mvprintw(16, 10, "Inventory penuh! Tidak bisa menambahkan item lagi.");
+        refresh();
+        napms(1000);
+    }
+}
+
+
+void removeItem(vector<string>& inventory) {
+    mvprintw(15, 10, "Masukkan nama item yang ingin dihapus: ");
+    refresh();
+    char buffer[256];
+    scanw("%s", buffer);
+    string item(buffer);
+    
+    auto it = find(inventory.begin(), inventory.end(), item);
+    if (it != inventory.end()) {
+        inventory.erase(it);
+        mvprintw(16, 10, "%s telah dihapus dari inventory.", item.c_str());
+        refresh();
+        napms(1000);
+    } else {
+        mvprintw(16, 10, "%s tidak ditemukan di inventory.", item.c_str());
+        refresh();
+        napms(1000);
+    }
+}
+
+
+void saveInventory(const vector<string>& inventory, const string& filename) {
+    ofstream file(filename);
+    if (!file.is_open()) {
+        mvprintw(15, 10, "Error: Tidak bisa menyimpan inventory.");
+        refresh();
+        napms(1000);
+        return;
+    }
+
+    for (const auto& item : inventory) {
+        file << item << endl;
+    }
+    file.close();
+    mvprintw(15, 10, "Inventory telah disimpan.");
+    refresh();
+    napms(1000);
+}
+
+
+vector<string> loadInventory(const string& filename) {
+    vector<string> inventory;
+    ifstream file(filename);
+    if (!file.is_open()) {
+        return inventory; 
+    }
+
+    string item;
+    while (getline(file, item)) {
+        inventory.push_back(item);
+    }
+    file.close();
+    return inventory;
+}
+
+
+void inventoryMenu(vector<string>& inventory) {
+    int highlight = 0;
+    int choice;
+    while (true) {
+        displayInventoryMenu(inventory, highlight);
+        
+        choice = getch(); 
+
+        switch (choice) {
+            case KEY_UP:
+                if (highlight > 0) highlight--;
+                break;
+            case KEY_DOWN:
+                if (highlight < inventory.size() - 1) highlight++;
+                break;
+            case 'a': 
+                addItem(inventory);
+                break;
+            case 'r': 
+                removeItem(inventory);
+                break;
+            case 27: 
+                return;
+            default:
+                break;
+        }
+    }
+}
+
+
+void mainMenu(vector<string>& inventory) {
+    int highlight = 0;
+    int choice;
+
+    while (true) {
+        displayMainMenu(highlight);
+        choice = getch(); 
+
+        switch (choice) {
+            case KEY_UP:
+                if (highlight > 0) highlight--;
+                break;
+            case KEY_DOWN:
+                if (highlight < 1) highlight++;
+                break;
+            case 10: { 
+                if (highlight == 0) { 
+                    inventoryMenu(inventory);
+                } else if (highlight == 1) { 
+                    return;
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+}
+
+int main() {
+    initscr();
+    noecho();
+    curs_set(0);
+    keypad(stdscr, TRUE); // Mengaktifkan tombol arah
+
+    // Memuat inventaris dari file jika ada
+    vector<string> inventory = loadInventory("inventory.txt");
+
+    // Memulai menu utama
+    mainMenu(inventory);
+
+    // Simpan inventaris sebelum keluar
+    saveInventory(inventory, "inventory.txt");
+
+    
+    endwin();
+    return 0;
+}
+ 
