@@ -1,0 +1,122 @@
+#include <iostream>
+#include <ctime>
+#include <thread>
+#include <chrono>
+#include <string>
+using namespace std;
+
+unsigned char B[15] = {205, 218, 196, 191, 179, 195, 180, 194, 193, 217, 192, 220, 223, 219};
+
+void gotoxy(int x, int y)
+{
+    cout << "\033[" << y << ";" << x << "H";
+}
+
+void wait(float seconds)
+{
+    clock_t endwait = clock() + seconds * CLOCKS_PER_SEC;
+    while (clock() < endwait) {}
+}
+
+void setcolor(int color)
+{
+    cout << "\033[38;5;" << color << "m";
+}
+
+void M(int n)
+{
+    for (int i = 1; i <= n; i++)
+    {
+        cout << B[2];
+    }
+}
+
+void clearScreen()
+{
+    cout << "\033[2J\033[1;1H";
+}
+
+void printBigNumber(int number, const string &color)
+{
+    string numbers[3][7] = {
+        {
+            "   *****   ",
+            "  *     *  ",
+            "       *   ",
+            "   *****   ",
+            "       *   ",
+            "  *     *  ",
+            "   *****   "
+        },
+        {
+            "   *****   ",
+            "  *     *  ",
+            "       *   ",
+            "   *****   ",
+            "  *        ",
+            "  *        ",
+            "   *****   "
+        },
+        {
+            "     *     ",
+            "    **     ",
+            "   ***     ",
+            "     *     ",
+            "     *     ",
+            "     *     ",
+            "   *****   "
+        }
+    };
+
+    clearScreen();
+    cout << "\n\n\n";
+
+    cout << color << "###############" << "\033[0m" << endl;
+
+    for (const string &line : numbers[number - 1])
+    {
+        cout << color << "# " << line << " #" << "\033[0m" << endl;
+    }
+
+    cout << color << "###############" << "\033[0m" << endl;
+}
+
+int main()
+{
+    setcolor(33);
+    gotoxy(16, 13); cout << B[1];  M(91); cout << B[3] << endl;
+    gotoxy(16, 14); cout << B[4]; gotoxy(108, 14); cout << B[4];
+    gotoxy(16, 15); cout << B[10]; M(91); cout << B[9];
+
+    setcolor(11);
+    for (int i = 10; i <= 100; i++)
+    {
+        gotoxy(7 + i, 14); cout << B[13];
+        wait(0.1);
+        gotoxy(109, 14); cout << ends << i << " %";
+        gotoxy(53, 16); cout << ". . . LOADING . . .";
+
+        if (i == 100)
+        {
+            setcolor(2);
+            gotoxy(53, 16); cout << ". . . COMPLETE . . .";
+            cout << "\a";
+        }
+    }
+
+    wait(1);
+    clearScreen();
+
+    const string colors[] = {"\033[31m", "\033[33m", "\033[32m"};
+    for (int i = 3; i >= 1; i--)
+    {
+        printBigNumber(i, colors[3 - i]);
+        this_thread::sleep_for(chrono::seconds(1));
+    }
+
+    clearScreen();
+    cout << "\n\n\n\n";
+    cout << "\033[34m" << "Game Dimulai!" << "\033[0m" << endl;
+
+    return 0;
+}
